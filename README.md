@@ -1,0 +1,2 @@
+# Ultronic-AI-Chatbot-App
+This is my senior development project: Custom AI that troubleshoots code in Python, Java, Arduino IDE, and PLC - Programmable Logic Controller. This represents a professional-level undertaking that has significantly enhance my skills in AI development. (Being built within the CSE 499 course at BYU-IDAHO in Spring 2025.)
