@@ -8,6 +8,7 @@ import openai
 # and add OPENAI_API_KEY = "your_api_key_here" to it.
 try:
     openai.api_key = st.secrets["OPENAI_API_KEY"]
+    #os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 except KeyError:
     st.error("OpenAI API key not found. Please set it in .streamlit/secrets.toml or as an environment variable.")
     st.stop() # Stop the app if key is not found
