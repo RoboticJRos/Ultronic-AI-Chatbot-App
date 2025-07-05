@@ -38,7 +38,7 @@ def chat_with_gpt(prompt_messages):
      {"role": "user", "content": "Hello!"}]
     """
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=prompt_messages
         )
