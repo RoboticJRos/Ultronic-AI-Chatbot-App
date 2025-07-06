@@ -203,7 +203,7 @@ st.write("If you're interested in sharing more ideas or connecting, please feel 
 
 # Replace with your desired URL and display text
 survey_url = "https://docs.google.com/forms/d/e/1FAIpQLSfSUsHpdBhffbRphQ7ACxfxvQYGkfCWx3apfIcYvXQjj5WuLA/viewform?usp=header" # Survey URL
-link_text1 = "Visit Ultronic AI Chatbot Feedback Page"
+link_text1 = "Visit the Ultronic AI Chatbot Feedback Survey"
 st.markdown(f"**[{link_text1}]({survey_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
 
 
