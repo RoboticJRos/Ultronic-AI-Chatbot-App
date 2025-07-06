@@ -202,11 +202,12 @@ st.subheader("Have Feedback or Want to Connect?")
 st.write("If you're interested in sharing more ideas or connecting, please feel free fill out this google survey below:")
 
 # Replace with your desired URL and display text
-survey_url = "https://docs.google.com/forms/d/e/1FAIpQLSfSUsHpdBhffbRphQ7ACxfxvQYGkfCWx3apfIcYvXQjj5WuLA/viewform?usp=header" # Example URL
+survey_url = "https://docs.google.com/forms/d/e/1FAIpQLSfSUsHpdBhffbRphQ7ACxfxvQYGkfCWx3apfIcYvXQjj5WuLA/viewform?usp=header" # Survey URL
 link_text = "Visit Ultronic AI Chatbot Feedback Page"
 
 creator_url = "https://www.linkedin.com/in/johnny-ros-cit/" # Example URL
 link_text = "Visit Johnny Ros's Portfolio/LinkedIn"
 
+st.markdown(f"**[{link_text}]({survey_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
 st.markdown(f"**[{link_text}]({creator_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
 st.write("Thank you for using Ultronic AI!")
