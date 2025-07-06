@@ -204,10 +204,10 @@ st.write("If you're interested in sharing more ideas or connecting, please feel 
 # Replace with your desired URL and display text
 survey_url = "https://docs.google.com/forms/d/e/1FAIpQLSfSUsHpdBhffbRphQ7ACxfxvQYGkfCWx3apfIcYvXQjj5WuLA/viewform?usp=header" # Survey URL
 link_text1 = "Visit Ultronic AI Chatbot Feedback Page"
-
 st.markdown(f"**[{link_text1}]({survey_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
-st.markdown(f"**[{link_text2}]({creator_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
+
 
 st.write("Thank you for using Ultronic AI!")
 creator_url = "https://www.linkedin.com/in/johnny-ros-cit/" # Creator URL
 link_text2 = "Visit Johnny Ros's Portfolio/LinkedIn"
+st.markdown(f"**[{link_text2}]({creator_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
