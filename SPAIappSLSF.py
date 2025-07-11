@@ -1,17 +1,24 @@
-# Johnny Ros's Ultronic AI App.
+# Johnny Ros's Ultronic AI App - Further Enhanced Version
 # This is a chatbot application using OpenAI's GPT-3.5-turbo model.
-import streamlit as st # type: ignore
+import streamlit as st
 import openai
+import time
+from datetime import datetime
+
+# Set page config first
+st.set_page_config(
+    page_title="Ultronic AI Chatbot",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # Set the OpenAI API key securely using st.secrets
-# IMPORTANT: Create a .streamlit/secrets.toml file in the same directory
-# and add OPENAI_API_KEY = "your_api_key_here" to it.
 try:
     openai.api_key = st.secrets["OPENAI_API_KEY"]
-    #os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 except KeyError:
-    st.error("OpenAI API key not found. Please set it in .streamlit/secrets.toml or as an environment variable.")
-    st.stop() # Stop the app if key is not found
+    st.error("⚠️ OpenAI API key not found. Please set it in .streamlit/secrets.toml")
+    st.stop()
 
 # Define the chatbot's interaction rules
 rules = """
@@ -33,14 +40,13 @@ If the file type is recognized as code, assume the user is seeking technical ass
 def chat_with_gpt(prompt_messages):
     """
     Fetches messages from the OpenAI Chat model.
-    prompt_messages should be a list of dictionaries, e.g.,
-    [{"role": "system", "content": "You are a helpful assistant."},
-     {"role": "user", "content": "Hello!"}]
     """
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=prompt_messages
+            messages=prompt_messages,
+            temperature=0.7,
+            max_tokens=1000
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -53,18 +59,10 @@ def clear_chat_history():
     st.session_state.messages.append({'role': 'system', 'content': f"{rules}"})
     st.session_state.uploaded_file_content = None
     st.session_state.uploaded_file_name = None
-    # Increment the key to force a reset of the file_uploader widget
     st.session_state.file_uploader_key += 1
-    st.rerun() # Rerun to apply changes
+    st.rerun()
 
-
-# --- Streamlit UI ---
-st.set_page_config(page_title="Ultronic AI Chatbot")
-st.title("🤖 Ultronic AI Chatbot")
-st.write("Hello there, fellow BYUI student or Industrial worker. I'm Ultronic AI, your direct yet honest assistant for you.")
-st.markdown("---") # Separator
-
-# Initialize chat history and file content in Streamlit's session state
+# --- Initialize session state ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.messages.append({'role': 'system', 'content': f"{rules}"})
@@ -72,142 +70,215 @@ if "uploaded_file_content" not in st.session_state:
     st.session_state.uploaded_file_content = None
 if "uploaded_file_name" not in st.session_state:
     st.session_state.uploaded_file_name = None
-# Initialize a key for the file uploader to allow programmatic clearing
 if "file_uploader_key" not in st.session_state:
     st.session_state.file_uploader_key = 0
+if "chat_counter" not in st.session_state:
+    st.session_state.chat_counter = 0
 
+# --- Sidebar Configuration ---
+with st.sidebar:
+    st.header("⚙️ Settings")
+    
+    # Chat statistics
+    st.subheader("📊 Chat Statistics")
+    st.metric("Messages Sent", st.session_state.chat_counter)
+    st.metric("Files Uploaded", 1 if st.session_state.uploaded_file_content else 0)
+    
+    st.markdown("---")
+    
+    # Model settings
+    st.subheader("🎛️ Model Configuration")
+    st.info("Currently using: GPT-3.5-turbo")
+    
+    st.markdown("---")
+    
+    # Clear button in sidebar
+    if st.button("🗑️ Clear Chat & Files", use_container_width=True):
+        clear_chat_history()
+        st.success("Chat cleared!")
+    
+    st.markdown("---")
+    
+    # Help section
+    st.subheader("❓ Help")
+    with st.expander("How to use"):
+        st.write("""
+        1. **Upload a file** (optional) - Python, Arduino, Java, or PLC files
+        2. **Ask questions** about your code or general programming
+        3. **Get feedback** and troubleshooting help
+        4. **Use the clear button** to start fresh
+        """)
 
-# File Uploader Section
-st.subheader("Upload a Program File for Troubleshooting or Feedback")
-uploaded_file = st.file_uploader(
-    "Please drag and drop a Python, Arduino, Java, or PLC file here or click to browse below.",
-    type=[
-        "py", "ipynb", # Python
-        "ino", "c", "cpp", "h", # Arduino IDE (C/C++ based)
-        "java", "jar", "class", # Java
-        # Common PLC file extensions (these vary greatly by manufacturer)
-        "rsl", "acd", "rss", "rsp", # Rockwell Automation (RSLogix/Studio 5000)
-        "l5x", # Rockwell Automation (Studio 5000 export)
-        "pro", "prj", # Siemens (e.g., TIA Portal project files)
-        "s7p", # Siemens (Step 7)
-        "cxp", "opt", "onw", # Omron (CX-Programmer)
-        "gwb", "gsr", "mwp", "xar", "plc",
-        "txt", "log", "md", "json", "xml" # General text/config files that might contain code
-    ],
-    key=f"file_uploader_{st.session_state.file_uploader_key}" # Unique key for clearing
-)
+# --- Main App Layout ---
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    st.title("🤖 Ultronic AI Chatbot")
+
+with col2:
+    st.markdown("### Status")
+    if st.session_state.uploaded_file_content:
+        st.success("📁 File Loaded")
+    else:
+        st.info("📁 No File")
+
+st.write("Hello there, fellow BYUI student or Industrial worker. I'm Ultronic AI, your direct yet honest assistant.")
+
+# --- File Upload Section ---
+st.subheader("📤 Upload Program File")
+
+# Create two columns for file upload
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    uploaded_file = st.file_uploader(
+        "Drag and drop or browse for files:",
+        type=[
+            "py", "ipynb", # Python
+            "ino", "c", "cpp", "h", # Arduino IDE (C/C++ based)
+            "java", "jar", "class", # Java
+            "rsl", "acd", "rss", "rsp", "l5x", "pro", "prj", "s7p", "cxp", "opt", "onw", "gwb", "gsr", "mwp", "xar", "plc",
+            "txt", "log", "md", "json", "xml"
+        ],
+        key=f"file_uploader_{st.session_state.file_uploader_key}"
+    )
+
+with col2:
+    if st.session_state.uploaded_file_content:
+        st.success("✅ File Ready")
+        file_size = len(st.session_state.uploaded_file_content.encode('utf-8')) / 1024
+        st.metric("File Size", f"{file_size:.1f} KB")
 
 # Process uploaded file
 if uploaded_file is not None:
-    # Only re-process if a new file is uploaded or the existing one has changed
     if st.session_state.uploaded_file_name != uploaded_file.name or (uploaded_file.name and st.session_state.uploaded_file_content is None):
-        encodings_to_try = ["utf-8", "latin-1", "cp1252"] # Common encodings for text files
+        encodings_to_try = ["utf-8", "latin-1", "cp1252"]
         decoded_successfully = False
         file_content_temp = None
 
-        for encoding in encodings_to_try:
+        # Show progress bar while processing
+        progress_bar = st.progress(0)
+        
+        for i, encoding in enumerate(encodings_to_try):
+            progress_bar.progress((i + 1) / len(encodings_to_try))
             try:
-                uploaded_file.seek(0) # Reset file pointer for each decode attempt
+                uploaded_file.seek(0)
                 file_content_temp = uploaded_file.read().decode(encoding)
                 decoded_successfully = True
-                break # Decoding successful, exit loop
+                break
             except UnicodeDecodeError:
-                continue # Try next encoding
+                continue
             except Exception as e:
-                st.error(f"An unexpected error occurred while reading or decoding with '{encoding}': {e}")
-                file_content_temp = None
-                decoded_successfully = False
-                break # Exit loop on other error types
+                st.error(f"Error reading file with '{encoding}': {e}")
+                break
+
+        progress_bar.empty()
 
         if decoded_successfully:
             st.session_state.uploaded_file_content = file_content_temp
             st.session_state.uploaded_file_name = uploaded_file.name
-            st.success(f"File '{uploaded_file.name}' uploaded successfully (decoded with {encoding})! Ultronic AI is ready to analyze it.")
+            st.success(f"✅ File '{uploaded_file.name}' uploaded successfully!")
         else:
-            st.error(f"Error: Could not decode '{uploaded_file.name}' as text using common encodings. It might be a binary file or use an unusual text encoding. Please ensure it's a standard text-based code file.")
+            st.error("❌ Could not decode file. Please ensure it's a text-based code file.")
             st.session_state.uploaded_file_content = None
             st.session_state.uploaded_file_name = None
 else:
-    # If the file_uploader is empty (user cleared it), clear session state as well
-    # This prevents the app from "remembering" a cleared file on rerun
     if st.session_state.uploaded_file_content is not None:
         st.session_state.uploaded_file_content = None
         st.session_state.uploaded_file_name = None
-        st.info("The uploaded file has been cleared.")
 
-# Display File Details if content is available in session state
+# Display file content preview
 if st.session_state.uploaded_file_content is not None:
-    st.info(f"""
-        **File Details:**
-        - **Name:** `{st.session_state.uploaded_file_name}`
-        - **Size:** `{uploaded_file.size / 1024:.2f} KB`
-        - **Type (MIME):** `{uploaded_file.type if uploaded_file.type else 'Unknown'}`
-    """)
-
-    with st.expander(f"View content of '{st.session_state.uploaded_file_name}'"):
+    with st.expander(f"👀 Preview: '{st.session_state.uploaded_file_name}'", expanded=False):
         file_extension = st.session_state.uploaded_file_name.split('.')[-1].lower()
-        if file_extension in ["py", "ipynb"]:
-            st.code(st.session_state.uploaded_file_content, language="python")
-        elif file_extension in ["ino", "c", "cpp", "h"]:
-            st.code(st.session_state.uploaded_file_content, language="c++")
-        elif file_extension in ["java", "jar", "class"]:
-            st.code(st.session_state.uploaded_file_content, language="java")
-        elif file_extension in ["rsl", "acd", "rss", "rsp", "l5x", "pro", "prj", "s7p", "cxp", "opt", "onw", "gwb", "gsr", "mwp", "xar", "plc"]:
-            st.code(st.session_state.uploaded_file_content, language="text") # Fallback for PLC
-        else:
-            st.code(st.session_state.uploaded_file_content, language="text") # Default for other text-based files
+        
+        # Language mapping for syntax highlighting
+        language_map = {
+            "py": "python", "ipynb": "python",
+            "ino": "c++", "c": "c++", "cpp": "c++", "h": "c++",
+            "java": "java", "jar": "java", "class": "java",
+        }
+        
+        language = language_map.get(file_extension, "text")
+        
+        # Show only first 50 lines for preview
+        lines = st.session_state.uploaded_file_content.split('\n')
+        preview_content = '\n'.join(lines[:50])
+        if len(lines) > 50:
+            preview_content += f"\n... ({len(lines) - 50} more lines)"
+        
+        st.code(preview_content, language=language)
 
-st.markdown("---") # Separator
+st.markdown("---")
 
-# Clear Chat History Button (placed here for better visibility)
-st.button("Clear All Chat History and Uploaded File", on_click=clear_chat_history)
+# --- Chat Interface ---
+st.subheader("💬 Chat with Ultronic AI")
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    if message["role"] != "system": # Don't display the system message in the chat bubble
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# Display chat messages
+chat_container = st.container()
+with chat_container:
+    for message in st.session_state.messages:
+        if message["role"] != "system":
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-# Accept user input
-if user_input := st.chat_input("Please ask me any question about the uploaded file or general coding..."):
+# Chat input
+if user_input := st.chat_input("Ask me about your code or general programming..."):
+    # Increment chat counter
+    st.session_state.chat_counter += 1
+    
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": user_input})
-    # Display user message in chat message container
+    
+    # Display user message
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Prepare messages for the AI, incorporating uploaded file content if available
-    current_messages = list(st.session_state.messages) # Create a copy to modify for this turn
+    # Prepare messages for AI
+    current_messages = list(st.session_state.messages)
 
-    if st.session_state.uploaded_file_content: # Only add file content to messages if it was successfully decoded
-        current_messages.append({"role": "user", "content": f"The user has uploaded a file named '{st.session_state.uploaded_file_name}' with the following content for analysis:\n```\n{st.session_state.uploaded_file_content}\n```\n"})
-        st.info(f"Analyzing '{st.session_state.uploaded_file_name}' along with your query...")
-    else:
-        # Only show this warning if the user input implies they might be asking about a file, but none is there.
-        if "file" in user_input.lower() or "code" in user_input.lower() or "troubleshoot" in user_input.lower():
-            st.warning("No file content to analyze for this query as no file was successfully uploaded or it was cleared.")
+    if st.session_state.uploaded_file_content:
+        current_messages.append({
+            "role": "user", 
+            "content": f"The user has uploaded a file named '{st.session_state.uploaded_file_name}' with the following content for analysis:\n```\n{st.session_state.uploaded_file_content}\n```\n"
+        })
+        st.info(f"🔍 Analyzing '{st.session_state.uploaded_file_name}' along with your query...")
 
-
-    # Get AI response
-    with st.chat_message("Ultronic AI"):
-        with st.spinner("Calculating my next simple remark..."):
+    # Get AI response with typing indicator
+    with st.chat_message("assistant"):
+        with st.spinner("🤖 Ultronic AI is thinking..."):
             full_response = chat_with_gpt(current_messages)
-            st.markdown(full_response)
+            
+            # Simulate typing effect (optional)
+            message_placeholder = st.empty()
+            full_response_words = full_response.split()
+            displayed_response = ""
+            
+            for word in full_response_words:
+                displayed_response += word + " "
+                message_placeholder.markdown(displayed_response + "▌")
+                time.sleep(0.05)  # Adjust speed as needed
+            
+            message_placeholder.markdown(full_response)
+    
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-# --- New Section for External Link ---
-st.markdown("---") # Another separator for clarity
-st.subheader("Have Feedback or Want to Connect?")
-st.write("If you're interested in sharing more ideas or connecting, please feel free fill out this google survey below:")
+# --- Footer Section ---
+st.markdown("---")
+col1, col2 = st.columns(2)
 
-# Replace with your desired URL and display text
-survey_url = "https://docs.google.com/forms/d/e/1FAIpQLSfSUsHpdBhffbRphQ7ACxfxvQYGkfCWx3apfIcYvXQjj5WuLA/viewform?usp=header" # Survey URL
-link_text1 = "Visit the Ultronic AI Chatbot Feedback Survey"
-st.markdown(f"**[{link_text1}]({survey_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
+with col1:
+    st.subheader("📝 Feedback")
+    st.write("Share your thoughts and ideas:")
+    survey_url = "https://docs.google.com/forms/d/e/1FAIpQLSfSUsHpdBhffbRphQ7ACxfxvQYGkfCWx3apfIcYvXQjj5WuLA/viewform?usp=header"
+    st.markdown(f"**[📊 Feedback Survey]({survey_url})**")
 
+with col2:
+    st.subheader("👨‍💻 Connect")
+    st.write("Get in touch with the creator:")
+    creator_url = "https://www.linkedin.com/in/johnny-ros-cit/"
+    st.markdown(f"**[💼 Johnny Ros's LinkedIn]({creator_url})**")
 
-st.write("Thank you for using Ultronic AI!")
-creator_url = "https://www.linkedin.com/in/johnny-ros-cit/" # Creator URL
-link_text2 = "Visit Johnny Ros's Portfolio/LinkedIn"
-st.markdown(f"**[{link_text2}]({creator_url})**", unsafe_allow_html=False) # target="_blank" is default for external links in Streamlit markdown
+st.markdown("---")
+st.markdown("*Thank you for using Ultronic AI! 🤖*")
