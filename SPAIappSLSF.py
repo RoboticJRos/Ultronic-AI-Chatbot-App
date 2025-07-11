@@ -122,7 +122,7 @@ with col2:
     else:
         st.info("📁 No File")
 
-st.write("Hello there, fellow BYUI student, faculty, staff or Industrial worker. I'm Ultronic AI, your direct yet honest assistant.")
+st.write("Hello there, fellow BYUI student, faculty, staff or Industrial worker. I'm Ultronic AI, your direct yet honest assistant. How may I help you at this time?")
 
 # --- File Upload Section ---
 st.subheader("📤 Upload Program File")
